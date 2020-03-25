@@ -5,6 +5,8 @@
 *.png
 *.jpg
 *.pyc
+# Ignoring weights file --> added by vj
+weights/
 old/
 mnist/
 data/

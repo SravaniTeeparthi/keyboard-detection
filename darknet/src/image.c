@@ -239,7 +239,6 @@ image **load_alphabet()
 void draw_detections(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
 {
     int i,j;
-
     for(i = 0; i < num; ++i){
         char labelstr[4096] = {0};
         int class = -1;
@@ -278,7 +277,7 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
             rgb[1] = green;
             rgb[2] = blue;
             box b = dets[i].bbox;
-            //printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
+            // printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
 
             int left  = (b.x-b.w/2.)*im.w;
             int right = (b.x+b.w/2.)*im.w;
@@ -307,6 +306,55 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
             }
         }
     }
+}
+
+
+void save_detections(image im, char *input, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
+{
+    int i,j;
+    FILE *fptr;
+    fptr = fopen("predictions.csv","a");
+    if(fptr == NULL)
+      {
+	printf("Error opening prediction file");
+	exit(1);
+      }
+    
+    for(i = 0; i < num; ++i){
+        char labelstr[4096] = {0};
+        int class = -1;
+        for(j = 0; j < classes; ++j){
+            if (dets[i].prob[j] > thresh){
+                if (class < 0) {
+                    strcat(labelstr, names[j]);
+                    class = j;
+                } else {
+                    strcat(labelstr, ", ");
+                    strcat(labelstr, names[j]);
+                }
+                printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+            }
+        }
+        if(class >= 0){
+	    box b = dets[i].bbox;
+            int left  = (b.x-b.w/2.)*im.w;
+            int right = (b.x+b.w/2.)*im.w;
+            int top   = (b.y-b.h/2.)*im.h;
+            int bot   = (b.y+b.h/2.)*im.h;
+	    int bbox_w= b.w*im.w;
+	    int bbox_h= (b.h)*im.h;
+
+            if(left < 0) left = 0;
+            if(right > im.w-1) right = im.w-1;
+            if(top < 0) top = 0;
+            if(bot > im.h-1) bot = im.h-1;
+	    // Saving in CSV
+	    fprintf(fptr, "%s,%s,%d,%d,%d,%d\n", input,labelstr,left,top,bbox_w,bbox_h);
+            
+            
+        }
+    }
+    fclose(fptr);
 }
 
 void transpose_image(image im)
